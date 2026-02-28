@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantCare AI - Fallback Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+        .float-anim {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-900 font-sans">
+    <div class="fixed top-0 left-0 w-full h-96 bg-green-200/40 rounded-b-[100%] blur-3xl -z-10 transform -translate-y-1/2"></div>
+    
+    <div id="app" class="min-h-screen flex flex-col justify-center items-center py-12 px-4 relative max-w-lg mx-auto w-full">
+        <!-- Header -->
+        <header class="mb-10 text-center w-full">
+            <h1 class="text-4xl font-extrabold text-gray-900 drop-shadow-sm">PlantCare <span class="text-green-600">AI</span></h1>
+            <p class="text-gray-500 mt-2 text-sm font-medium">Simplified Interface (System Fallback)</p>
+        </header>
+
+        <!-- Main Card -->
+        <div class="glass-panel w-full p-8 rounded-3xl transition-all shadow-xl">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Disease Assessment</h2>
+                <p class="text-gray-500 text-sm mt-1">Select an image to analyze the plant condition.</p>
+            </div>
+
+            <!-- Upload Area -->
+            <label for="file-upload" class="block cursor-pointer relative border-2 border-dashed border-gray-300 hover:border-green-500 hover:bg-green-50/50 rounded-2xl p-10 text-center transition-all duration-300 group">
+                <input id="file-upload" type="file" class="hidden" accept="image/*" onchange="previewImage(event)"/>
+                
+                <div id="upload-prompt" class="space-y-4">
+                    <div class="mx-auto w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center float-anim group-hover:bg-green-200 transition-colors">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    </div>
+                    <p class="font-semibold text-gray-700 text-lg">Click to browse</p>
+                    <p class="text-sm text-gray-500">Supports JPG, PNG</p>
+                </div>
+
+                <div id="image-preview" class="hidden relative rounded-xl overflow-hidden shadow-lg border border-gray-100">
+                    <img id="preview-img" class="w-full h-48 object-cover" />
+                </div>
+            </label>
+
+            <!-- Error Box -->
+            <div id="error-box" class="hidden mt-6 p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 text-sm font-medium flex gap-3 items-center">
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span id="error-text"></span>
+            </div>
+
+            <!-- Action Button -->
+            <button id="predict-btn" disabled onclick="submitPrediction()" class="w-full mt-6 py-4 rounded-xl font-bold text-lg text-white bg-gray-300 cursor-not-allowed transition-all duration-300 flex justify-center items-center gap-2">
+                Analyze Plant
+            </button>
+
+            <!-- Results -->
+            <div id="result-box" class="hidden mt-6 overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-sm p-6 transform transition-all duration-500 translate-y-4 opacity-0">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 bg-green-100 text-green-600 rounded-full">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">Analysis Complete</h3>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                        <span class="text-gray-500 font-medium">Diagnosis</span>
+                        <span id="res-class" class="font-bold text-gray-900 text-right ml-4"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-500 font-medium whitespace-nowrap">Confidence</span>
+                        <div class="flex items-center justify-end gap-3 w-full ml-4 block">
+                            <span id="res-conf" class="font-bold text-green-600"></span>
+                            <div class="w-24 h-2 bg-gray-100 rounded-full overflow-hidden shrink-0">
+                                <div id="res-bar" class="h-full bg-green-500 transition-all duration-1000 ease-out" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                <!-- Detailed Insights -->
+                <div class="mt-4 space-y-3 border-t border-gray-100 pt-4">
+                    <div id="res-desc-container" class="text-sm hidden">
+                        <span class="font-bold text-gray-800 block mb-1">Description</span>
+                        <p id="res-desc" class="text-gray-600 leading-relaxed"></p>
+                    </div>
+                    <div id="res-causes-container" class="text-sm hidden">
+                        <span class="font-bold text-orange-600 block mb-1">Causes</span>
+                        <p id="res-causes" class="text-gray-600 leading-relaxed bg-orange-50 p-3 rounded-lg"></p>
+                    </div>
+                    <div id="res-treatment-container" class="text-sm hidden">
+                        <span class="font-bold text-green-700 block mb-1">Recommended Treatment</span>
+                        <p id="res-treatment" class="text-gray-600 leading-relaxed bg-green-50 p-3 rounded-lg border border-green-100"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8000";
+        let selectedFile = null;
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            selectedFile = file;
+            
+            // UI Updates
+            document.getElementById('upload-prompt').classList.add('hidden');
+            document.getElementById('image-preview').classList.remove('hidden');
+            document.getElementById('preview-img').src = URL.createObjectURL(file);
+            document.getElementById('result-box').classList.remove('opacity-100', 'translate-y-0');
+            document.getElementById('result-box').classList.add('hidden');
+            document.getElementById('error-box').classList.add('hidden');
+            
+            // Hide previous details
+            document.getElementById('res-desc-container').classList.add('hidden');
+            document.getElementById('res-causes-container').classList.add('hidden');
+            document.getElementById('res-treatment-container').classList.add('hidden');
+
+            const btn = document.getElementById('predict-btn');
+            btn.disabled = false;
+            btn.className = "w-full mt-6 py-4 rounded-xl font-bold text-lg text-white bg-green-600 hover:bg-green-700 hover:-translate-y-1 shadow-lg hover:shadow-green-500/40 transition-all duration-300 flex justify-center items-center gap-2";
+        }
+
+        async function submitPrediction() {
+            if (!selectedFile) return;
+
+            const btn = document.getElementById('predict-btn');
+            
+            // Set Loading state
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing...`;
+            btn.className = "w-full mt-6 py-4 rounded-xl font-bold text-lg text-white bg-green-500 cursor-wait transition-all duration-300 flex justify-center items-center";
+            
+            document.getElementById('error-box').classList.add('hidden');
+            
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            try {
+                const response = await fetch(`${API_URL}/predict`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errPayload = await response.json();
+                    throw new Error(errPayload.detail || "Server failed to process image");
+                }
+                
+                const data = await response.json();
+                
+                // Show Results
+                document.getElementById('result-box').classList.remove('hidden');
+                
+                setTimeout(() => {
+                    document.getElementById('result-box').classList.add('opacity-100', 'translate-y-0');
+                    document.getElementById('res-class').textContent = data.prediction;
+                    const confPercent = (data.confidence * 100).toFixed(1);
+                    document.getElementById('res-conf').textContent = `${confPercent}%`;
+                    document.getElementById('res-bar').style.width = `${confPercent}%`;
+                    
+                    if (data.description) {
+                        document.getElementById('res-desc-container').classList.remove('hidden');
+                        document.getElementById('res-desc').textContent = data.description;
+                    }
+                    if (data.causes) {
+                        document.getElementById('res-causes-container').classList.remove('hidden');
+                        document.getElementById('res-causes').textContent = data.causes;
+                    }
+                    if (data.treatment) {
+                        document.getElementById('res-treatment-container').classList.remove('hidden');
+                        document.getElementById('res-treatment').textContent = data.treatment;
+                    }
+                }, 50);
+
+            } catch (err) {
+                document.getElementById('error-box').classList.remove('hidden');
+                document.getElementById('error-text').textContent = err.message || "Failed to connect to backend engine.";
+            } finally {
+                // Reset Loading state
+                btn.disabled = false;
+                btn.innerHTML = "Analyze Another Plant";
+                btn.className = "w-full mt-6 py-4 rounded-xl font-bold text-lg text-white bg-green-600 hover:bg-green-700 hover:-translate-y-1 shadow-lg hover:shadow-green-500/40 transition-all duration-300 flex justify-center items-center gap-2";
+            }
+        }
+    </script>
+</body>
+</html>
