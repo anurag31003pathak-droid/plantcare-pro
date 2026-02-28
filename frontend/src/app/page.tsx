@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { UploadCloud, Leaf, AlertCircle, CheckCircle2, RefreshCw, Hexagon, Activity } from "lucide-react";
+import { UploadCloud, Leaf, AlertCircle, CheckCircle2, RefreshCw, Hexagon, Activity, LogIn, LogOut, Clock } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://plantcare-pro-api.onrender.com";
 
@@ -16,11 +17,24 @@ type PredictionResult = {
 };
 
 export default function Home() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAuth, setIsAuth] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuth(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsAuth(false);
+    reset();
+  };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const selected = acceptedFiles[0];
@@ -52,9 +66,19 @@ export default function Home() {
     const formData = new FormData();
     formData.append("file", file);
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError("Please log in to analyze plants.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/predict`, {
         method: "POST",
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: formData,
       });
 
@@ -95,6 +119,26 @@ export default function Home() {
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">PlantCare <span className="text-gradient">Pro</span></h1>
             <p className="text-sm font-medium text-gray-500">Intelligent Disease Diagnostics</p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {isAuth ? (
+            <div className="flex items-center gap-4">
+              <button onClick={() => router.push('/history')} className="text-sm font-bold text-emerald-600 bg-white/60 hover:bg-white px-4 py-2 rounded-xl border border-emerald-100 shadow-sm flex items-center gap-2 transition-all">
+                <Clock className="w-4 h-4" /> History
+              </button>
+              <button onClick={handleLogout} className="text-sm font-bold text-gray-500 hover:text-gray-800 flex items-center gap-2 transition-colors">
+                <LogOut className="w-4 h-4" /> Logout
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button onClick={() => router.push('/login')} className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors">Log In</button>
+              <button onClick={() => router.push('/signup')} className="text-sm font-bold bg-brand-600 text-white px-4 py-2 rounded-xl shadow-md shadow-brand-500/20 hover:bg-brand-700 transition-all flex items-center gap-2">
+                <LogIn className="w-4 h-4" /> Sign Up
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
 
