@@ -5,7 +5,7 @@ from app.models import PredictionLog
 from app.ml_model import model_instance
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://frontend-iota-ashy-73.vercel.app"]}}, supports_credentials=True)
 
 @app.route("/health", methods=["GET"])
 def health_check():
