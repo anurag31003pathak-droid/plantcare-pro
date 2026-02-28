@@ -5,7 +5,7 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { UploadCloud, Leaf, AlertCircle, CheckCircle2, RefreshCw, Hexagon, Activity } from "lucide-react";
 
-const API_URL = "http://localhost:8001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://plantcare-pro-api.onrender.com";
 
 type PredictionResult = {
   prediction: string;
