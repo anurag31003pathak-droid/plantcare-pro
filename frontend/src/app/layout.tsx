@@ -10,7 +10,20 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: 'PlantCare Pro - Advanced Diagnostics',
-  description: 'Intelligent plant disease detection and actionable treatment insights.',
+  description: 'Upload a photo of your plant leaf to receive instant, AI-driven diagnostics, potential causes, and actionable treatment recommendations. Get healthy plants today.',
+  keywords: ['plant care', 'plant disease AI', 'plant disease scanner', 'crop health', 'botany tool', 'farming AI', 'leaf disease detector', 'PlantCare Pro', 'agriculture tech'],
+  authors: [{ name: 'Anurag Pathak' }],
+  openGraph: {
+    title: 'PlantCare Pro',
+    description: 'Intelligent AI disease diagnostics for your plants.',
+    url: 'https://plantcare-pro.vercel.app',
+    siteName: 'PlantCare Pro',
+    type: 'website',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
 };
 
 export default function RootLayout({
