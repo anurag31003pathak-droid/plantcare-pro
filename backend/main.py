@@ -85,6 +85,9 @@ def get_prediction_history():
     finally:
          db.close()
 
-if __name__ == "__main__":
+# Initialize the database immediately on import for gunicorn
+with app.app_context():
     init_db()
+
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8001, debug=True)
